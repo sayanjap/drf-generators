@@ -1,6 +1,4 @@
-
 __all__ = ['API_VIEW', 'API_URL']
-
 
 API_URL = """from django.conf.urls import include, url
 from {{ app }} import views
@@ -8,32 +6,54 @@ from {{ app }} import views
 
 urlpatterns = [
 {% for model in models %}
-  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/$', views.{{ model }}APIView.as_view()),
-  url(r'^{{ model|lower }}/$', views.{{ model }}APIListView.as_view()),
+  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/$', views.{{ model }}APIRetrieveView.as_view()),
+  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/update/$', views.{{ model }}APIUpdateView.as_view()),
+  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/delete/$', views.{{ model }}APIDeleteView.as_view()),
+  url(r'^{{ model|lower }}/list/$', views.{{ model }}APIListView.as_view()),
+  url(r'^{{ model|lower }}/$', views.{{ model }}APICreateView.as_view()),
 {% endfor %}
 ]
 """
 
-
 API_VIEW = """from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from {{ app }}.serializers import {{ serializers|join:', ' }}
 from {{ app }}.models import {{ models|join:', ' }}
 {% for model in models %}
 
-class {{ model }}APIView(APIView):
-
-    def get(self, request, id, format=None):
+class {{ model }}APIListView(generics.ListAPIView):
+    serializer_class = {{ model }}Serializer
+    queryset = NotImplemented
+    
+    def list(self, request, *args, **kwargs):
+        items = {{ model }}.objects.all()
+        ser = self.get_serializer(items, many=True).data
+        return Response(ser, status=status.HTTP_200_OK)
+        
+        
+class {{ model }}APIRetrieveView(generics.RetrieveAPIView):
+    serializer_class = {{ model }}Serializer
+    queryset = NotImplemented   
+    
+    def get(self, request, *args, **kwargs):
         try:
+            id = self.kwargs['id']
             item = {{ model }}.objects.get(pk=id)
             serializer = {{ model }}Serializer(item)
             return Response(serializer.data)
         except {{ model }}.DoesNotExist:
             return Response(status=404)
-
-    def put(self, request, id, format=None):
+            
+            
+class {{ model }}APIUpdateView(generics.UpdateAPIView):
+    serializer_class = {{ model }}Serializer
+    queryset = NotImplemented  
+    
+    def update(self, request, *args, **kwargs):
         try:
+            id = self.kwargs['id']
             item = {{ model }}.objects.get(pk=id)
         except {{ model }}.DoesNotExist:
             return Response(status=404)
@@ -42,26 +62,27 @@ class {{ model }}APIView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
-
-    def delete(self, request, id, format=None):
+        
+        
+class {{ model }}APIDeleteView(generics.DestroyAPIView):
+    serializer_class = {{ model }}Serializer
+    queryset = NotImplemented          
+    
+    def delete(self, request, *args, **kwargs):
         try:
+            id = self.kwargs['id']
             item = {{ model }}.objects.get(pk=id)
         except {{ model }}.DoesNotExist:
             return Response(status=404)
         item.delete()
         return Response(status=204)
+        
 
+class {{ model }}APICreateView(generics.CreateAPIView):
+    serializer_class = {{ model }}Serializer
+    queryset = NotImplemented
 
-class {{ model }}APIListView(APIView):
-
-    def get(self, request, format=None):
-        items = {{ model }}.objects.order_by('pk')
-        paginator = PageNumberPagination()
-        result_page = paginator.paginate_queryset(items, request)
-        serializer = {{ model }}Serializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
-
-    def post(self, request, format=None):
+    def create(self, request, *args, **kwargs):
         serializer = {{ model }}Serializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
