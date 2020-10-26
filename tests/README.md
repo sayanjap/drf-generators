@@ -1,9 +1,6 @@
 
 # Test API
 
-pip install -U wheel setuptools
-python setup.py sdist bdist_wheel
-
 This folder contains a test Django Rest Framework project featuring API Views, Serializers and Urls generated using drf-generators.
 
 The tests file contains classes to generate and test each style of API.

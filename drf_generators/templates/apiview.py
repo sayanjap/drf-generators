@@ -3,14 +3,13 @@ __all__ = ['API_VIEW', 'API_URL']
 API_URL = """from django.conf.urls import include, url
 from {{ app }} import views
 
-
 urlpatterns = [
 {% for model in models %}
-  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/$', views.{{ model }}APIRetrieveView.as_view()),
-  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/update/$', views.{{ model }}APIUpdateView.as_view()),
-  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/delete/$', views.{{ model }}APIDeleteView.as_view()),
-  url(r'^{{ model|lower }}/list/$', views.{{ model }}APIListView.as_view()),
-  url(r'^{{ model|lower }}/$', views.{{ model }}APICreateView.as_view()),
+  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/$', views.{{ model }}APIRetrieveView.as_view(), name='get-{{ model|lower }}'),
+  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/update/$', views.{{ model }}APIUpdateView.as_view(), name='update-{{ model|lower }}'),
+  url(r'^{{ model|lower }}/(?P<id>[0-9]+)/delete/$', views.{{ model }}APIDeleteView.as_view(), name='delete-{{ model|lower }}'),
+  url(r'^{{ model|lower }}/list/$', views.{{ model }}APIListView.as_view(), name='list-{{ model|lower }}'),
+  url(r'^{{ model|lower }}/$', views.{{ model }}APICreateView.as_view(), name='create-{{ model|lower }}'),
 {% endfor %}
 ]
 """
